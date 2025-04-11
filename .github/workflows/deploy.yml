@@ -13,21 +13,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup SSH key
+      - name: Setup SSH key (.pem format)
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2-key.pem
+          chmod 600 ~/.ssh/ec2-key.pem
           echo "Connecting to ${{ secrets.EC2_HOST }}"
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
       - name: Deploy to EC2
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
-            cd ~/hms/hms-backend || mkdir -p ~/hms/hms-backend && cd ~/hms/hms-backend
-            git clone https://github.com/AiswaryaCp/hms-backend.git . || git pull
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            mkdir -p ~/hms/hms-backend
+            cd ~/hms/hms-backend
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/AiswaryaCp/hms-backend.git .
+            else
+              git pull
+            fi
             docker stop hms-backend || true
             docker rm hms-backend || true
             docker build -t hms-backend .
-            docker run -d --name hms-backend -p 8000:8000 hms-backend
+            docker run -d --name hms-backend -p 3000:80 hms-backend
           EOF
