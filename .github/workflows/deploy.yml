@@ -33,5 +33,5 @@ jobs:
             docker stop hms-backend || true
             docker rm hms-backend || true
             docker build -t hms-backend .
-            docker run -d --name hms-backend -p 3000:80 hms-backend
+            docker run -d --name hms-backend -p 8000:8000 hms-backend
           EOF
