@@ -34,4 +34,6 @@ jobs:
             docker rm hms-backend || true
             docker build -t hms-backend .
             docker run -d --name hms-backend -p 8000:8000 hms-backend
+            # Run migrations inside the container
+            docker exec hms-backend python manage.py migrate
           EOF
